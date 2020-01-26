@@ -51,9 +51,12 @@ type LangHandler struct {
 	importGraph     importgraph.Graph
 
 	cancel *cancel
+
+	didInit bool
 }
 
 func (h *LangHandler) init() error {
+	h.didInit = true
 	return nil
 }
 
@@ -82,7 +85,7 @@ func (h *LangHandler) Handle(ctx context.Context, conn jsonrpc2.JSONRPC2, req *j
 	var cancelManager *cancel
 	h.mu.Lock()
 	cancelManager = h.cancel
-	if req.Method != "initialize" && h.init == nil {
+	if req.Method != "initialize" && !h.didInit {
 		h.mu.Unlock()
 		return nil, errors.New("server must be initialized")
 	}
@@ -103,7 +106,7 @@ func (h *LangHandler) Handle(ctx context.Context, conn jsonrpc2.JSONRPC2, req *j
 
 	switch req.Method {
 	case "initialize":
-		if h.init != nil {
+		if h.didInit {
 			return nil, errors.New("language server is already initialized")
 		}
 		if req.Params == nil {
