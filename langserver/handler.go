@@ -7,8 +7,6 @@ import (
 	"fmt"
 	"sync"
 
-	"golang.org/x/tools/refactor/importgraph"
-
 	"github.com/sourcegraph/go-lsp"
 	"github.com/sourcegraph/go-lsp/lspext"
 	"github.com/sourcegraph/jsonrpc2"
@@ -43,12 +41,6 @@ func (h lspHandler) Handle(ctx context.Context, conn *jsonrpc2.Conn, req *jsonrp
 type LangHandler struct {
 	mu sync.Mutex
 	HandlerCommon
-
-	// cache the reverse import graph. The sync.Once is a pointer since it
-	// is reset when we reset caches. If it was a value we would racily
-	// updated the internal mutex when assigning a new sync.Once.
-	importGraphOnce *sync.Once
-	importGraph     importgraph.Graph
 
 	cancel *cancel
 

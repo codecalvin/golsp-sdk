@@ -3,3 +3,7 @@ build:
 
 test:
 	go test -cover -race -mod=vendor ./...
+
+chores:
+	go mod tidy
+	go mod vendor

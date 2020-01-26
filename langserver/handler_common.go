@@ -4,8 +4,6 @@ import (
 	"errors"
 	"log"
 	"sync"
-
-	"github.com/sourcegraph/go-lsp"
 )
 
 // HandlerCommon contains functionality that both the build and lang
@@ -18,7 +16,7 @@ type HandlerCommon struct {
 	shutdown   bool
 }
 
-func (h *HandlerCommon) Reset(rootURI lsp.DocumentURI) error {
+func (h *HandlerCommon) Reset() error {
 	h.mu.Lock()
 	defer h.mu.Unlock()
 	if h.shutdown {
