@@ -1,4 +1,4 @@
-package langserver
+package handler
 
 import (
 	"context"
