@@ -2,7 +2,6 @@ package server
 
 import (
 	"context"
-	"crypto/tls"
 	"fmt"
 	"io"
 	"io/ioutil"
@@ -29,21 +28,15 @@ type Config struct {
 }
 
 func Run(cfg Config) error {
+	log.SetOutput(os.Stderr)
+
 	listen := func(addr string) (*net.Listener, error) {
 		listener, err := net.Listen("tcp", addr)
 		if err != nil {
 			log.Fatalf("Could not bind to address %s: %v", addr, err)
 			return nil, err
 		}
-		if os.Getenv("TLS_CERT") != "" && os.Getenv("TLS_KEY") != "" {
-			cert, err := tls.X509KeyPair([]byte(os.Getenv("TLS_CERT")), []byte(os.Getenv("TLS_KEY")))
-			if err != nil {
-				return nil, err
-			}
-			listener = tls.NewListener(listener, &tls.Config{
-				Certificates: []tls.Certificate{cert},
-			})
-		}
+
 		return &listener, nil
 	}
 
@@ -51,8 +44,6 @@ func Run(cfg Config) error {
 		fmt.Println(version)
 		return nil
 	}
-
-	log.SetOutput(os.Stderr)
 
 	var connOpt []jsonrpc2.ConnOpt
 
@@ -80,8 +71,14 @@ func Run(cfg Config) error {
 			connectionCount = connectionCount + 1
 			connectionID := connectionCount
 			log.Printf("langserver-go: received incoming connection #%d\n", connectionID)
-			handler, closer := newHandler()
-			jsonrpc2Connection := jsonrpc2.NewConn(context.Background(), jsonrpc2.NewBufferedStream(conn, jsonrpc2.VSCodeObjectCodec{}), handler, connOpt...)
+
+			h, closer := newHandler()
+			jsonrpc2Connection := jsonrpc2.NewConn(
+				context.Background(),
+				jsonrpc2.NewBufferedStream(conn, jsonrpc2.VSCodeObjectCodec{}),
+				h,
+				connOpt...)
+
 			go func() {
 				<-jsonrpc2Connection.DisconnectNotify()
 				err := closer.Close()
@@ -110,8 +107,13 @@ func Run(cfg Config) error {
 			connectionID := connectionCount
 
 			log.Printf("langserver-go: received incoming connection #%d\n", connectionID)
-			handler, closer := newHandler()
-			<-jsonrpc2.NewConn(context.Background(), wsjsonrpc2.NewObjectStream(connection), handler, connOpt...).DisconnectNotify()
+			h, closer := newHandler()
+			<-jsonrpc2.NewConn(
+				context.Background(),
+				wsjsonrpc2.NewObjectStream(connection),
+				h,
+				connOpt...).DisconnectNotify()
+
 			err = closer.Close()
 			if err != nil {
 				log.Println(err)
@@ -136,8 +138,13 @@ func Run(cfg Config) error {
 
 	case "stdio":
 		log.Println("langserver-go: reading on stdin, writing on stdout")
-		handler, closer := newHandler()
-		<-jsonrpc2.NewConn(context.Background(), jsonrpc2.NewBufferedStream(stdrwc{}, jsonrpc2.VSCodeObjectCodec{}), handler, connOpt...).DisconnectNotify()
+		h, closer := newHandler()
+		<-jsonrpc2.NewConn(
+			context.Background(),
+			jsonrpc2.NewBufferedStream(stdrwc{}, jsonrpc2.VSCodeObjectCodec{}),
+			h,
+			connOpt...).DisconnectNotify()
+
 		err := closer.Close()
 		if err != nil {
 			log.Println(err)
