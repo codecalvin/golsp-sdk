@@ -1,4 +1,4 @@
-module github.com/disposedtrolley/golsp-sdk
+module github.com/goodgophers/golsp-sdk
 
 go 1.13
 

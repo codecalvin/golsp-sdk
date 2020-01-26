@@ -6,7 +6,7 @@ import (
 	"log"
 	"os"
 
-	"github.com/disposedtrolley/golsp-sdk/internal/server"
+	"github.com/goodgophers/golsp-sdk/internal/server"
 )
 
 var (
