@@ -110,26 +110,20 @@ func (h *LangHandler) Handle(ctx context.Context, conn jsonrpc2.JSONRPC2, req *j
 
 		// @TODO unmarshal `initialize` params
 
-		kind := lsp.TDSKIncremental
+		kind := lsp.TDSKFull
 		return lsp.InitializeResult{
 			Capabilities: lsp.ServerCapabilities{
 				TextDocumentSync: &lsp.TextDocumentSyncOptionsOrKind{
 					Kind: &kind,
 				},
-				CompletionProvider:           nil,
-				DefinitionProvider:           true,
-				TypeDefinitionProvider:       true,
-				DocumentFormattingProvider:   true,
-				DocumentSymbolProvider:       true,
-				HoverProvider:                true,
-				ReferencesProvider:           true,
-				RenameProvider:               true,
-				WorkspaceSymbolProvider:      true,
-				ImplementationProvider:       true,
-				XWorkspaceReferencesProvider: true,
-				XDefinitionProvider:          true,
-				XWorkspaceSymbolByProperties: true,
-				SignatureHelpProvider:        &lsp.SignatureHelpOptions{TriggerCharacters: []string{"(", ","}},
+				CompletionProvider:         nil,
+				DefinitionProvider:         true,
+				TypeDefinitionProvider:     true,
+				DocumentFormattingProvider: true,
+				DocumentSymbolProvider:     true,
+				HoverProvider:              true,
+				ReferencesProvider:         true,
+				RenameProvider:             true,
 			},
 		}, nil
 

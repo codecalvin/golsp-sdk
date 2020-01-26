@@ -2,15 +2,15 @@ package langserver
 
 import (
 	"context"
-	"fmt"
 	"net"
 	"strings"
 	"testing"
 
 	"github.com/sourcegraph/jsonrpc2"
+	"github.com/stretchr/testify/require"
 )
 
-func startServer(t testing.TB, h jsonrpc2.Handler) (addr string, done func()) {
+func startServer(t *testing.T, h jsonrpc2.Handler) (addr string, done func()) {
 	bindAddr := ":0"
 	l, err := net.Listen("tcp", bindAddr)
 	if err != nil {
@@ -38,7 +38,7 @@ func serve(ctx context.Context, lis net.Listener, h jsonrpc2.Handler, opt ...jso
 	}
 }
 
-func dialServer(t testing.TB, addr string, h ...*jsonrpc2.HandlerWithErrorConfigurer) *jsonrpc2.Conn {
+func dialServer(t *testing.T, addr string, h ...*jsonrpc2.HandlerWithErrorConfigurer) *jsonrpc2.Conn {
 	conn, err := (&net.Dialer{}).Dial("tcp", addr)
 	if err != nil {
 		t.Fatal(err)
@@ -60,6 +60,32 @@ func dialServer(t testing.TB, addr string, h ...*jsonrpc2.HandlerWithErrorConfig
 }
 
 func TestInitialize(t *testing.T) {
+	tests := []struct {
+		Name             string
+		RPCMethod        string
+		RPCParams        map[string]interface{}
+		ExpectedResponse map[string]interface{}
+	}{
+		{
+			"when a valid `initialize` call is made",
+			"initialize",
+			nil,
+			make(map[string]interface{}),
+		},
+	}
+
+	for _, tc := range tests {
+		t.Run(tc.Name, func(t *testing.T) {
+			ExecuteTestCase(t, func(ctx context.Context, conn *jsonrpc2.Conn, notifies chan *jsonrpc2.Request) {
+				var result interface{}
+				err := conn.Call(ctx, tc.RPCMethod, tc.RPCParams, &result)
+				require.Nil(t, err, "should not error on RPC call")
+			})
+		})
+	}
+}
+
+func ExecuteTestCase(t *testing.T, fn func(context.Context, *jsonrpc2.Conn, chan *jsonrpc2.Request)) {
 	h := NewHandler()
 
 	addr, done := startServer(t, h)
@@ -82,7 +108,5 @@ func TestInitialize(t *testing.T) {
 		t.Fatal("initialize:", err)
 	}
 
-	fmt.Println(result)
-
-	//fn(ctx, rootURI, conn, notifies)
+	fn(ctx, conn, notifies)
 }
