@@ -15,7 +15,7 @@ import (
 
 // NewHandler creates a Go language server handler.
 func NewHandler() jsonrpc2.Handler {
-	return lspHandler{jsonrpc2.HandlerWithError((&LangHandler{}).handle)}
+	return LSPHandler{jsonrpc2.HandlerWithError((&LangHandler{}).handle)}
 }
 
 // lspHandler wraps LangHandler to correctly handle requests in the correct
@@ -29,12 +29,12 @@ func NewHandler() jsonrpc2.Handler {
 // except methods which could mutate the state used by our typecheckers (ie
 // textDocument/didOpen, etc). Those are done serially since applying them out
 // of order could result in a different textDocument.
-type lspHandler struct {
+type LSPHandler struct {
 	jsonrpc2.Handler
 }
 
 // Handle implements jsonrpc2.Handler
-func (h lspHandler) Handle(ctx context.Context, conn *jsonrpc2.Conn, req *jsonrpc2.Request) {
+func (h LSPHandler) Handle(ctx context.Context, conn *jsonrpc2.Conn, req *jsonrpc2.Request) {
 	// @TODO filesystem ops need to be performed in order.
 	go h.Handler.Handle(ctx, conn, req)
 }
