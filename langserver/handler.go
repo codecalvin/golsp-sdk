@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"log"
 	"sync"
 
 	"github.com/sourcegraph/go-lsp"
@@ -34,6 +35,7 @@ type lspHandler struct {
 
 // Handle implements jsonrpc2.Handler
 func (h lspHandler) Handle(ctx context.Context, conn *jsonrpc2.Conn, req *jsonrpc2.Request) {
+	// @TODO filesystem ops need to be performed in order.
 	go h.Handler.Handle(ctx, conn, req)
 }
 
@@ -70,6 +72,7 @@ func (h *LangHandler) Handle(ctx context.Context, conn jsonrpc2.JSONRPC2, req *j
 	// Prevent any uncaught panics from taking the entire server down.
 	defer func() {
 		if r := recover(); r != nil {
+			log.Println(err)
 			err = r.(error)
 		}
 	}()
