@@ -7,7 +7,7 @@ import (
 	"net/http"
 	"time"
 
-	"github.com/disposedtrolley/golsp-sdk/internal/handler"
+	"github.com/goodgophers/golsp-sdk/internal/handler"
 	"github.com/gorilla/websocket"
 	"github.com/pkg/errors"
 	"github.com/sourcegraph/jsonrpc2"

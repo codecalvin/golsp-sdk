@@ -5,7 +5,7 @@ import (
 	"log"
 	"os"
 
-	"github.com/disposedtrolley/golsp-sdk/internal/handler"
+	"github.com/goodgophers/golsp-sdk/internal/handler"
 	"github.com/sourcegraph/jsonrpc2"
 )
 
