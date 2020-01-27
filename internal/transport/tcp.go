@@ -13,8 +13,12 @@ type TCPTransport struct {
 	Handler jsonrpc2.Handler
 }
 
-func NewTCPTransport(handler jsonrpc2.Handler, addr string) *TCPTransport {
-	return &TCPTransport{Addr: addr, Handler: handler}
+func NewTCPTransport(addr string) *TCPTransport {
+	return &TCPTransport{Addr: addr}
+}
+
+func (t *TCPTransport) WithHandler(h jsonrpc2.Handler) {
+	t.Handler = h
 }
 
 func (t *TCPTransport) Listen(connOpts []jsonrpc2.ConnOpt) error {

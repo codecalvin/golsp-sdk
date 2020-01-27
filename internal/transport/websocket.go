@@ -18,8 +18,12 @@ type WebsocketTransport struct {
 	Handler jsonrpc2.Handler
 }
 
-func NewWebsocketTransport(handler jsonrpc2.Handler, addr string) *WebsocketTransport {
-	return &WebsocketTransport{Addr: addr, Handler: handler}
+func NewWebsocketTransport(addr string) *WebsocketTransport {
+	return &WebsocketTransport{Addr: addr}
+}
+
+func (t *WebsocketTransport) WithHandler(h jsonrpc2.Handler) {
+	t.Handler = h
 }
 
 func (t *WebsocketTransport) Listen(connOpts []jsonrpc2.ConnOpt) error {

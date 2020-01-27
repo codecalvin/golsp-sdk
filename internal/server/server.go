@@ -35,13 +35,16 @@ func Run(cfg Config) error {
 	var connOpt []jsonrpc2.ConnOpt
 	switch *cfg.Mode {
 	case "tcp":
-		t := transport.NewTCPTransport(handler, *cfg.Addr)
+		t := transport.NewTCPTransport(*cfg.Addr)
+		t.WithHandler(handler)
 		return t.Listen(connOpt)
 	case "websocket":
-		t := transport.NewWebsocketTransport(handler, *cfg.Addr)
+		t := transport.NewWebsocketTransport(*cfg.Addr)
+		t.WithHandler(handler)
 		return t.Listen(connOpt)
 	case "stdio":
-		t := transport.NewStdioTransport(handler)
+		t := transport.NewStdioTransport()
+		t.WithHandler(handler)
 		return t.Listen(connOpt)
 	default:
 		return fmt.Errorf("invalid mode %q", *cfg.Mode)

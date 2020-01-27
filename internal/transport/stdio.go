@@ -12,8 +12,12 @@ type StdioTransport struct {
 	Handler jsonrpc2.Handler
 }
 
-func NewStdioTransport(handler jsonrpc2.Handler) *StdioTransport {
-	return &StdioTransport{Handler: handler}
+func NewStdioTransport() *StdioTransport {
+	return &StdioTransport{}
+}
+
+func (t *StdioTransport) WithHandler(h jsonrpc2.Handler) {
+	t.Handler = h
 }
 
 func (t *StdioTransport) Listen(connOpts []jsonrpc2.ConnOpt) error {
