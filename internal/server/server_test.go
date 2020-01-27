@@ -2,11 +2,13 @@ package server
 
 import (
 	"context"
+	"encoding/json"
 	"net"
 	"strings"
 	"testing"
 
 	"github.com/sourcegraph/jsonrpc2"
+	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
 
@@ -65,12 +67,14 @@ func TestInitialize(t *testing.T) {
 		RPCMethod        string
 		RPCParams        map[string]interface{}
 		ExpectedResponse map[string]interface{}
+		ExpectedError    error
 	}{
 		{
-			"when a valid `initialize` call is made",
+			"when a valid `initialize` call is made after the server is already initialised",
 			"initialize",
 			nil,
 			make(map[string]interface{}),
+			&jsonrpc2.Error{Code: 0, Message: "language transport is already initialized", Data: (*json.RawMessage)(nil)},
 		},
 	}
 
@@ -79,16 +83,21 @@ func TestInitialize(t *testing.T) {
 			ExecuteTestCase(t, func(ctx context.Context, conn *jsonrpc2.Conn, notifies chan *jsonrpc2.Request) {
 				var result interface{}
 				err := conn.Call(ctx, tc.RPCMethod, tc.RPCParams, &result)
-				require.Nil(t, err, "should not error on RPC call")
+				if tc.ExpectedError != nil {
+					assert.Equal(t, tc.ExpectedError, err)
+				} else {
+					require.Nil(t, err, "should not error on RPC call")
+					assert.Equal(t, tc.ExpectedResponse, result)
+				}
 			})
 		})
 	}
 }
 
 func ExecuteTestCase(t *testing.T, fn func(context.Context, *jsonrpc2.Conn, chan *jsonrpc2.Request)) {
-	h := NewHandler()
+	s := NewLSPServer()
 
-	addr, done := startServer(t, h)
+	addr, done := startServer(t, s)
 	defer done()
 
 	notifies := make(chan *jsonrpc2.Request, 10)

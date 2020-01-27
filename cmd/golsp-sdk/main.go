@@ -2,11 +2,10 @@ package main
 
 import (
 	"flag"
-	"fmt"
 	"log"
-	"os"
 
 	"github.com/goodgophers/golsp-sdk/internal/server"
+	"github.com/goodgophers/golsp-sdk/internal/transport"
 )
 
 var (
@@ -19,14 +18,6 @@ func main() {
 	flag.Parse()
 	log.SetFlags(0)
 
-	cfg := server.Config{
-		Mode:         mode,
-		Addr:         addr,
-		PrintVersion: printVersion,
-	}
-
-	if err := server.Run(cfg); err != nil {
-		fmt.Fprintln(os.Stderr, err)
-		os.Exit(1)
-	}
+	s := server.NewLSPServer()
+	s.Start(transport.NewTCPTransport(":4389"))
 }
