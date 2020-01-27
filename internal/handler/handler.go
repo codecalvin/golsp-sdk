@@ -41,11 +41,10 @@ func (h LSPHandler) Handle(ctx context.Context, conn *jsonrpc2.Conn, req *jsonrp
 
 // LangHandler is a Go language server LSP/JSON-RPC handler.
 type LangHandler struct {
-	mu sync.Mutex
 	HandlerCommon
 
-	cancel *cancel
-
+	mu      sync.Mutex
+	cancel  *cancel
 	didInit bool
 }
 
@@ -80,11 +79,12 @@ func (h *LangHandler) Handle(ctx context.Context, conn jsonrpc2.JSONRPC2, req *j
 	var cancelManager *cancel
 	h.mu.Lock()
 	cancelManager = h.cancel
+	h.mu.Unlock()
+
 	if req.Method != "initialize" && !h.didInit {
-		h.mu.Unlock()
 		return nil, errors.New("server must be initialized")
 	}
-	h.mu.Unlock()
+
 	if err := h.CheckReady(); err != nil {
 		if req.Method == "exit" {
 			err = nil
@@ -94,8 +94,8 @@ func (h *LangHandler) Handle(ctx context.Context, conn jsonrpc2.JSONRPC2, req *j
 
 	// Notifications don't have an ID, so they can't be cancelled
 	if cancelManager != nil && !req.Notif {
-		var cancel func()
-		ctx, cancel = cancelManager.WithCancel(ctx, req.ID)
+		// @TODO pass ctx into all handler methods
+		_, cancel := cancelManager.WithCancel(ctx, req.ID)
 		defer cancel()
 	}
 
@@ -146,18 +146,19 @@ func (h *LangHandler) Handle(ctx context.Context, conn jsonrpc2.JSONRPC2, req *j
 		if req.Params == nil {
 			return nil, nil
 		}
+
 		var params lsp.CancelParams
 		if err := json.Unmarshal(*req.Params, &params); err != nil {
 			return nil, nil
 		}
-		if cancelManager == nil {
-			return nil, nil
+
+		if cancelManager != nil {
+			cancelManager.Cancel(jsonrpc2.ID{
+				Num:      params.ID.Num,
+				Str:      params.ID.Str,
+				IsString: params.ID.IsString,
+			})
 		}
-		cancelManager.Cancel(jsonrpc2.ID{
-			Num:      params.ID.Num,
-			Str:      params.ID.Str,
-			IsString: params.ID.IsString,
-		})
 		return nil, nil
 
 	case "textDocument/hover":
@@ -289,6 +290,7 @@ func (h *LangHandler) Handle(ctx context.Context, conn jsonrpc2.JSONRPC2, req *j
 			return nil, err
 		}
 		return nil, nil
+
 	default:
 		return nil, &jsonrpc2.Error{Code: jsonrpc2.CodeMethodNotFound, Message: fmt.Sprintf("method not supported: %s", req.Method)}
 	}
