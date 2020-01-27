@@ -9,9 +9,8 @@ import (
 )
 
 var (
-	mode         = flag.String("mode", "stdio", "communication mode (stdio|tcp|websocket)")
-	addr         = flag.String("addr", ":4389", "transport listen address (tcp or websocket)")
-	printVersion = flag.Bool("version", false, "print version and exit")
+	mode = flag.String("mode", "stdio", "communication mode (stdio|tcp|websocket)")
+	addr = flag.String("addr", ":4389", "transport listen address (tcp or websocket modes only)")
 )
 
 func main() {
@@ -19,5 +18,14 @@ func main() {
 	log.SetFlags(0)
 
 	s := server.NewLSPServer()
-	s.Start(transport.NewTCPTransport(":4389"))
+
+	switch *mode {
+	case "stdio":
+		log.Fatal(s.Start(transport.NewStdioTransport()))
+	case "tcp":
+		log.Fatal(s.Start(transport.NewTCPTransport(*addr)))
+	case "websocket":
+		log.Fatal(s.Start(transport.NewWebsocketTransport(*addr)))
+	}
+
 }
