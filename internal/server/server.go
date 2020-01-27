@@ -17,7 +17,7 @@ type LSPServer struct {
 }
 
 func NewLSPServer() LSPServer {
-	return LSPServer{handler: jsonrpc2.HandlerWithError(NewLangHandler().Handle)}
+	return LSPServer{handler: jsonrpc2.HandlerWithError(NewLSPHandler().Handle)}
 }
 
 func (s LSPServer) Start(tsprt transport.LSPTransport) error {

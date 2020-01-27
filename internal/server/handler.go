@@ -12,15 +12,15 @@ import (
 	"github.com/sourcegraph/jsonrpc2"
 )
 
-type LangHandler struct {
+type LSPHandler struct {
 	mu       sync.Mutex
 	cancel   *cancel
 	didInit  bool
 	shutdown bool
 }
 
-func NewLangHandler() *LangHandler {
-	return &LangHandler{
+func NewLSPHandler() *LSPHandler {
+	return &LSPHandler{
 		didInit:  false,
 		shutdown: false,
 	}
@@ -30,7 +30,7 @@ func NewLangHandler() *LangHandler {
 // ordering requirements, so this should not just be wrapped in an
 // jsonrpc2.AsyncHandler. Ensure you have the same ordering as used in the
 // NewHandler implementation.
-func (h *LangHandler) Handle(ctx context.Context, conn *jsonrpc2.Conn, req *jsonrpc2.Request) (result interface{}, err error) {
+func (h *LSPHandler) Handle(ctx context.Context, conn *jsonrpc2.Conn, req *jsonrpc2.Request) (result interface{}, err error) {
 	// Prevent any uncaught panics from taking the entire transport down.
 	defer func() {
 		if r := recover(); r != nil {
@@ -128,15 +128,15 @@ func (h *LangHandler) Handle(ctx context.Context, conn *jsonrpc2.Conn, req *json
 	}
 }
 
-func (h *LangHandler) init() {
+func (h *LSPHandler) init() {
 	h.didInit = true
 }
 
-func (h *LangHandler) reset() error {
+func (h *LSPHandler) reset() error {
 	return nil
 }
 
-func (h *LangHandler) CheckReady() error {
+func (h *LSPHandler) CheckReady() error {
 	h.mu.Lock()
 	defer h.mu.Unlock()
 	if h.shutdown {
@@ -145,7 +145,7 @@ func (h *LangHandler) CheckReady() error {
 	return nil
 }
 
-func (h *LangHandler) ShutDown() {
+func (h *LSPHandler) ShutDown() {
 	h.mu.Lock()
 	if h.shutdown {
 		log.Printf("Warning: transport received a shutdown request after it was already shut down.")
