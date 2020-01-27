@@ -1,4 +1,4 @@
-package server
+package transport
 
 import (
 	"context"
@@ -7,22 +7,22 @@ import (
 	"net/http"
 	"time"
 
-	"github.com/goodgophers/golsp-sdk/internal/handler"
 	"github.com/gorilla/websocket"
 	"github.com/pkg/errors"
 	"github.com/sourcegraph/jsonrpc2"
 	wsjsonrpc2 "github.com/sourcegraph/jsonrpc2/websocket"
 )
 
-type WebsocketServer struct {
-	Addr string
+type WebsocketTransport struct {
+	Addr    string
+	Handler jsonrpc2.Handler
 }
 
-func NewWebsocketServer(addr string) *WebsocketServer {
-	return &WebsocketServer{Addr: addr}
+func NewWebsocketTransport(handler jsonrpc2.Handler, addr string) *WebsocketTransport {
+	return &WebsocketTransport{Addr: addr, Handler: handler}
 }
 
-func (s *WebsocketServer) Serve(connOpts []jsonrpc2.ConnOpt) error {
+func (t *WebsocketTransport) Listen(connOpts []jsonrpc2.ConnOpt) error {
 	listen := func(addr string) (*net.Listener, error) {
 		listener, err := net.Listen("tcp", addr)
 		if err != nil {
@@ -51,17 +51,16 @@ func (s *WebsocketServer) Serve(connOpts []jsonrpc2.ConnOpt) error {
 
 		log.Printf("langserver-go: received incoming connection #%d\n", connectionID)
 
-		h := handler.NewHandler()
 		<-jsonrpc2.NewConn(
 			context.Background(),
 			wsjsonrpc2.NewObjectStream(connection),
-			h,
+			t.Handler,
 			connOpts...).DisconnectNotify()
 
 		log.Printf("langserver-go: connection #%d closed\n", connectionID)
 	})
 
-	l, err := listen(s.Addr)
+	l, err := listen(t.Addr)
 	if err != nil {
 		log.Println(err)
 		return err
@@ -71,8 +70,8 @@ func (s *WebsocketServer) Serve(connOpts []jsonrpc2.ConnOpt) error {
 		ReadTimeout:  75 * time.Second,
 		WriteTimeout: 60 * time.Second,
 	}
-	log.Println("langserver-go: listening for WebSocket connections on", s.Addr)
+	log.Println("langserver-go: listening for WebSocket connections on", t.Addr)
 	err = server.Serve(*l)
-	log.Println(errors.Wrap(err, "HTTP server"))
+	log.Println(errors.Wrap(err, "HTTP transport"))
 	return err
 }

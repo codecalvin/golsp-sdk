@@ -1,27 +1,27 @@
-package server
+package transport
 
 import (
 	"context"
 	"log"
 	"os"
 
-	"github.com/goodgophers/golsp-sdk/internal/handler"
 	"github.com/sourcegraph/jsonrpc2"
 )
 
-type StdioServer struct{}
-
-func NewStdioServer() *StdioServer {
-	return &StdioServer{}
+type StdioTransport struct {
+	Handler jsonrpc2.Handler
 }
 
-func (s *StdioServer) Serve(connOpts []jsonrpc2.ConnOpt) error {
-	h := handler.NewHandler()
+func NewStdioTransport(handler jsonrpc2.Handler) *StdioTransport {
+	return &StdioTransport{Handler: handler}
+}
+
+func (t *StdioTransport) Listen(connOpts []jsonrpc2.ConnOpt) error {
 	log.Println("langserver-go: reading on stdin, writing on stdout")
 	<-jsonrpc2.NewConn(
 		context.Background(),
 		jsonrpc2.NewBufferedStream(stdrwc{}, jsonrpc2.VSCodeObjectCodec{}),
-		h,
+		t.Handler,
 		connOpts...).DisconnectNotify()
 
 	log.Println("connection closed")

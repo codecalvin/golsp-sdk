@@ -1,4 +1,4 @@
-package handler
+package server
 
 import (
 	"context"
@@ -18,7 +18,7 @@ func startServer(t *testing.T, h jsonrpc2.Handler) (addr string, done func()) {
 	}
 	go func() {
 		if err := serve(context.Background(), l, h); err != nil && !strings.Contains(err.Error(), "use of closed network connection") {
-			t.Fatal("jsonrpc2.Serve:", err)
+			t.Fatal("jsonrpc2.Listen:", err)
 		}
 	}()
 	return l.Addr().String(), func() {
