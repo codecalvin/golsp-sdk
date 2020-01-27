@@ -1,46 +1,32 @@
 package server
 
 import (
-	"fmt"
-	"log"
-	"os"
+	"context"
 
+	"github.com/goodgophers/golsp-sdk/internal/transport"
 	"github.com/sourcegraph/jsonrpc2"
 )
 
-const version = "v0.1"
+type (
+	LSPMethod         string
+	LSPMethodCallback func(params interface{}) (result interface{}, err error)
+)
 
-type Config struct {
-	Mode         *string
-	Addr         *string
-	PrintVersion *bool
+type LSPServer struct {
+	handler jsonrpc2.Handler
 }
 
-type LSPServer interface {
-	Serve(connOpts []jsonrpc2.ConnOpt) error
+func NewLSPServer() LSPServer {
+	return LSPServer{handler: jsonrpc2.HandlerWithError(NewLSPHandler().Handle)}
 }
 
-func Run(cfg Config) error {
-	log.SetOutput(os.Stderr)
+func (s LSPServer) Start(tsprt transport.LSPTransport) error {
+	tsprt.WithHandler(s)
+	return tsprt.Listen()
+}
 
-	if *cfg.PrintVersion {
-		fmt.Println(version)
-		return nil
-	}
-
-	var connOpt []jsonrpc2.ConnOpt
-
-	switch *cfg.Mode {
-	case "tcp":
-		server := NewTCPServer(*cfg.Addr)
-		return server.Serve(connOpt)
-	case "websocket":
-		server := NewWebsocketServer(*cfg.Addr)
-		return server.Serve(connOpt)
-	case "stdio":
-		server := NewStdioServer()
-		return server.Serve(connOpt)
-	default:
-		return fmt.Errorf("invalid mode %q", *cfg.Mode)
-	}
+// Handle implements jsonrpc2.Handler
+func (s LSPServer) Handle(ctx context.Context, conn *jsonrpc2.Conn, req *jsonrpc2.Request) {
+	// @TODO filesystem ops need to be performed in order.
+	go s.handler.Handle(ctx, conn, req)
 }

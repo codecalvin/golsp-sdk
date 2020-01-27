@@ -1,23 +1,27 @@
-package server
+package transport
 
 import (
 	"context"
 	"log"
 	"net"
 
-	"github.com/goodgophers/golsp-sdk/internal/handler"
 	"github.com/sourcegraph/jsonrpc2"
 )
 
-type TCPServer struct {
-	Addr string
+type TCPTransport struct {
+	Addr    string
+	Handler jsonrpc2.Handler
 }
 
-func NewTCPServer(addr string) *TCPServer {
-	return &TCPServer{Addr: addr}
+func NewTCPTransport(addr string) *TCPTransport {
+	return &TCPTransport{Addr: addr}
 }
 
-func (s *TCPServer) Serve(connOpts []jsonrpc2.ConnOpt) error {
+func (t *TCPTransport) WithHandler(h jsonrpc2.Handler) {
+	t.Handler = h
+}
+
+func (t *TCPTransport) Listen() error {
 	listen := func(addr string) (*net.Listener, error) {
 		listener, err := net.Listen("tcp", addr)
 		if err != nil {
@@ -28,13 +32,13 @@ func (s *TCPServer) Serve(connOpts []jsonrpc2.ConnOpt) error {
 		return &listener, nil
 	}
 
-	lis, err := listen(s.Addr)
+	lis, err := listen(t.Addr)
 	if err != nil {
 		return err
 	}
 	defer (*lis).Close()
 
-	log.Println("langserver-go: listening for TCP connections on", s.Addr)
+	log.Println("langserver-go: listening for TCP connections on", t.Addr)
 
 	connectionCount := 0
 
@@ -47,12 +51,10 @@ func (s *TCPServer) Serve(connOpts []jsonrpc2.ConnOpt) error {
 		connectionID := connectionCount
 		log.Printf("langserver-go: received incoming connection #%d\n", connectionID)
 
-		h := handler.NewHandler()
 		jsonrpc2Connection := jsonrpc2.NewConn(
 			context.Background(),
 			jsonrpc2.NewBufferedStream(conn, jsonrpc2.VSCodeObjectCodec{}),
-			h,
-			connOpts...)
+			t.Handler)
 
 		go func() {
 			<-jsonrpc2Connection.DisconnectNotify()
