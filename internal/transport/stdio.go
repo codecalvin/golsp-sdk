@@ -20,13 +20,12 @@ func (t *StdioTransport) WithHandler(h jsonrpc2.Handler) {
 	t.Handler = h
 }
 
-func (t *StdioTransport) Listen(connOpts []jsonrpc2.ConnOpt) error {
+func (t *StdioTransport) Listen() error {
 	log.Println("langserver-go: reading on stdin, writing on stdout")
 	<-jsonrpc2.NewConn(
 		context.Background(),
 		jsonrpc2.NewBufferedStream(stdrwc{}, jsonrpc2.VSCodeObjectCodec{}),
-		t.Handler,
-		connOpts...).DisconnectNotify()
+		t.Handler).DisconnectNotify()
 
 	log.Println("connection closed")
 	return nil

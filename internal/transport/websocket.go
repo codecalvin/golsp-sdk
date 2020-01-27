@@ -26,7 +26,7 @@ func (t *WebsocketTransport) WithHandler(h jsonrpc2.Handler) {
 	t.Handler = h
 }
 
-func (t *WebsocketTransport) Listen(connOpts []jsonrpc2.ConnOpt) error {
+func (t *WebsocketTransport) Listen() error {
 	listen := func(addr string) (*net.Listener, error) {
 		listener, err := net.Listen("tcp", addr)
 		if err != nil {
@@ -58,8 +58,7 @@ func (t *WebsocketTransport) Listen(connOpts []jsonrpc2.ConnOpt) error {
 		<-jsonrpc2.NewConn(
 			context.Background(),
 			wsjsonrpc2.NewObjectStream(connection),
-			t.Handler,
-			connOpts...).DisconnectNotify()
+			t.Handler).DisconnectNotify()
 
 		log.Printf("langserver-go: connection #%d closed\n", connectionID)
 	})

@@ -21,7 +21,7 @@ func (t *TCPTransport) WithHandler(h jsonrpc2.Handler) {
 	t.Handler = h
 }
 
-func (t *TCPTransport) Listen(connOpts []jsonrpc2.ConnOpt) error {
+func (t *TCPTransport) Listen() error {
 	listen := func(addr string) (*net.Listener, error) {
 		listener, err := net.Listen("tcp", addr)
 		if err != nil {
@@ -54,8 +54,7 @@ func (t *TCPTransport) Listen(connOpts []jsonrpc2.ConnOpt) error {
 		jsonrpc2Connection := jsonrpc2.NewConn(
 			context.Background(),
 			jsonrpc2.NewBufferedStream(conn, jsonrpc2.VSCodeObjectCodec{}),
-			t.Handler,
-			connOpts...)
+			t.Handler)
 
 		go func() {
 			<-jsonrpc2Connection.DisconnectNotify()
