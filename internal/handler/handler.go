@@ -41,11 +41,10 @@ func (h LSPHandler) Handle(ctx context.Context, conn *jsonrpc2.Conn, req *jsonrp
 
 // LangHandler is a Go language server LSP/JSON-RPC handler.
 type LangHandler struct {
-	HandlerCommon
-
-	mu      sync.Mutex
-	cancel  *cancel
-	didInit bool
+	mu       sync.Mutex
+	cancel   *cancel
+	didInit  bool
+	shutdown bool
 }
 
 func (h *LangHandler) init() error {
@@ -137,7 +136,7 @@ func (h *LangHandler) Handle(ctx context.Context, conn jsonrpc2.JSONRPC2, req *j
 
 	case "exit":
 		if c, ok := conn.(*jsonrpc2.Conn); ok {
-			c.Close()
+			return nil, c.Close()
 		}
 		return nil, nil
 
@@ -294,4 +293,22 @@ func (h *LangHandler) Handle(ctx context.Context, conn jsonrpc2.JSONRPC2, req *j
 	default:
 		return nil, &jsonrpc2.Error{Code: jsonrpc2.CodeMethodNotFound, Message: fmt.Sprintf("method not supported: %s", req.Method)}
 	}
+}
+
+func (h *LangHandler) CheckReady() error {
+	h.mu.Lock()
+	defer h.mu.Unlock()
+	if h.shutdown {
+		return errors.New("server is shutting down")
+	}
+	return nil
+}
+
+func (h *LangHandler) ShutDown() {
+	h.mu.Lock()
+	if h.shutdown {
+		log.Printf("Warning: server received a shutdown request after it was already shut down.")
+	}
+	h.shutdown = true
+	h.mu.Unlock()
 }
