@@ -6,7 +6,7 @@ import (
 	"log"
 	"os"
 
-	"github.com/goodgophers/golsp-sdk/internal/transport"
+	"github.com/goodgophers/golsp-sdk/internal/server"
 )
 
 var (
@@ -19,13 +19,13 @@ func main() {
 	flag.Parse()
 	log.SetFlags(0)
 
-	cfg := transport.Config{
+	cfg := server.Config{
 		Mode:         mode,
 		Addr:         addr,
 		PrintVersion: printVersion,
 	}
 
-	if err := transport.Run(cfg); err != nil {
+	if err := server.Run(cfg); err != nil {
 		fmt.Fprintln(os.Stderr, err)
 		os.Exit(1)
 	}

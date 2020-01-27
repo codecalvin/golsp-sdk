@@ -6,12 +6,47 @@ import (
 	"errors"
 	"fmt"
 	"log"
+	"os"
 	"sync"
 
+	"github.com/goodgophers/golsp-sdk/internal/transport"
 	"github.com/sourcegraph/go-lsp"
 	"github.com/sourcegraph/go-lsp/lspext"
 	"github.com/sourcegraph/jsonrpc2"
 )
+
+const version = "v0.1"
+
+type Config struct {
+	Mode         *string
+	Addr         *string
+	PrintVersion *bool
+}
+
+func Run(cfg Config) error {
+	log.SetOutput(os.Stderr)
+
+	if *cfg.PrintVersion {
+		fmt.Println(version)
+		return nil
+	}
+
+	handler := NewHandler()
+	var connOpt []jsonrpc2.ConnOpt
+	switch *cfg.Mode {
+	case "tcp":
+		t := transport.NewTCPTransport(handler, *cfg.Addr)
+		return t.Listen(connOpt)
+	case "websocket":
+		t := transport.NewWebsocketTransport(handler, *cfg.Addr)
+		return t.Listen(connOpt)
+	case "stdio":
+		t := transport.NewStdioTransport(handler)
+		return t.Listen(connOpt)
+	default:
+		return fmt.Errorf("invalid mode %q", *cfg.Mode)
+	}
+}
 
 // NewHandler creates a Go language transport server.
 func NewHandler() jsonrpc2.Handler {
