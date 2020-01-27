@@ -15,7 +15,7 @@ import (
 
 // NewHandler creates a Go language server handler.
 func NewHandler() jsonrpc2.Handler {
-	return LSPHandler{jsonrpc2.HandlerWithError((&LangHandler{}).handle)}
+	return LSPHandler{jsonrpc2.HandlerWithError((&LangHandler{}).Handle)}
 }
 
 // lspHandler wraps LangHandler to correctly handle requests in the correct
@@ -57,16 +57,11 @@ func (h *LangHandler) reset() error {
 	return nil
 }
 
-// handle implements jsonrpc2.Handler.
-func (h *LangHandler) handle(ctx context.Context, conn *jsonrpc2.Conn, req *jsonrpc2.Request) (result interface{}, err error) {
-	return h.Handle(ctx, conn, req)
-}
-
 // Handle creates a response for a JSONRPC2 LSP request. Note: LSP has strict
 // ordering requirements, so this should not just be wrapped in an
 // jsonrpc2.AsyncHandler. Ensure you have the same ordering as used in the
 // NewHandler implementation.
-func (h *LangHandler) Handle(ctx context.Context, conn jsonrpc2.JSONRPC2, req *jsonrpc2.Request) (result interface{}, err error) {
+func (h *LangHandler) Handle(ctx context.Context, conn *jsonrpc2.Conn, req *jsonrpc2.Request) (result interface{}, err error) {
 	// Prevent any uncaught panics from taking the entire server down.
 	defer func() {
 		if r := recover(); r != nil {
@@ -135,10 +130,7 @@ func (h *LangHandler) Handle(ctx context.Context, conn jsonrpc2.JSONRPC2, req *j
 		return nil, nil
 
 	case "exit":
-		if c, ok := conn.(*jsonrpc2.Conn); ok {
-			return nil, c.Close()
-		}
-		return nil, nil
+		return nil, conn.Close()
 
 	case "$/cancelRequest":
 		// notification, don't send back results/errors
