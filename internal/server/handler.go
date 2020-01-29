@@ -13,16 +13,17 @@ import (
 )
 
 type LSPHandler struct {
-	mu       sync.Mutex
-	cancel   *cancel
-	didInit  bool
-	shutdown bool
+	mu            sync.Mutex
+	cancelManager *cancel
+	didInit       bool
+	shutdown      bool
 }
 
 func NewLSPHandler() *LSPHandler {
 	return &LSPHandler{
-		didInit:  false,
-		shutdown: false,
+		didInit:       false,
+		shutdown:      false,
+		cancelManager: &cancel{},
 	}
 }
 
@@ -39,11 +40,6 @@ func (h *LSPHandler) Handle(ctx context.Context, conn *jsonrpc2.Conn, req *jsonr
 		}
 	}()
 
-	var cancelManager *cancel
-	h.mu.Lock()
-	cancelManager = h.cancel
-	h.mu.Unlock()
-
 	if req.Method != "initialize" && !h.didInit {
 		return nil, errors.New("transport must be initialized")
 	}
@@ -56,9 +52,9 @@ func (h *LSPHandler) Handle(ctx context.Context, conn *jsonrpc2.Conn, req *jsonr
 	}
 
 	// Notifications don't have an ID, so they can't be cancelled
-	if cancelManager != nil && !req.Notif {
+	if h.cancelManager != nil && !req.Notif {
 		// @TODO pass ctx into all server methods
-		_, cancel := cancelManager.WithCancel(ctx, req.ID)
+		_, cancel := h.cancelManager.WithCancel(ctx, req.ID)
 		defer cancel()
 	}
 
@@ -104,6 +100,7 @@ func (h *LSPHandler) Handle(ctx context.Context, conn *jsonrpc2.Conn, req *jsonr
 		return nil, conn.Close()
 
 	case "$/cancelRequest":
+		log.Printf("[notification] $/cancelRequest\n")
 		// notification, don't send back results/errors
 		if req.Params == nil {
 			return nil, nil
@@ -114,8 +111,8 @@ func (h *LSPHandler) Handle(ctx context.Context, conn *jsonrpc2.Conn, req *jsonr
 			return nil, nil
 		}
 
-		if cancelManager != nil {
-			cancelManager.Cancel(jsonrpc2.ID{
+		if h.cancelManager != nil {
+			h.cancelManager.Cancel(jsonrpc2.ID{
 				Num:      params.ID.Num,
 				Str:      params.ID.Str,
 				IsString: params.ID.IsString,
@@ -147,9 +144,9 @@ func (h *LSPHandler) CheckReady() error {
 
 func (h *LSPHandler) ShutDown() {
 	h.mu.Lock()
+	defer h.mu.Unlock()
 	if h.shutdown {
 		log.Printf("Warning: transport received a shutdown request after it was already shut down.")
 	}
 	h.shutdown = true
-	h.mu.Unlock()
 }

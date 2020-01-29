@@ -2,6 +2,7 @@ package server
 
 import (
 	"context"
+	"log"
 	"sync"
 
 	"github.com/sourcegraph/jsonrpc2"
@@ -42,6 +43,8 @@ func (c *cancel) Cancel(id jsonrpc2.ID) {
 	}
 	c.mu.Unlock()
 	if cancel != nil {
+		log.Printf("cancelling request %s\n", id)
 		cancel()
+		log.Printf("cancelled request %s\n", id)
 	}
 }

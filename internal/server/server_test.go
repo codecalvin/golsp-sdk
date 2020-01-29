@@ -94,6 +94,20 @@ func TestInitialize(t *testing.T) {
 	}
 }
 
+func TestCancelManager(t *testing.T) {
+	t.Run("when a valid $/cancelRequest notification is sent", func(t *testing.T) {
+		ExecuteTestCase(t, func(ctx context.Context, conn *jsonrpc2.Conn, notifies chan *jsonrpc2.Request) {
+			var result interface{}
+			err := conn.Call(ctx, "$/cancelRequest", nil, &result)
+
+			require.Nil(t, err, "should not error on request cancellation")
+			assert.Equal(t, nil, result, "should return nil on request cancellation")
+		})
+	})
+
+	// @TODO need to add tests to cover cancelling an actual request.
+}
+
 func ExecuteTestCase(t *testing.T, fn func(context.Context, *jsonrpc2.Conn, chan *jsonrpc2.Request)) {
 	s := NewLSPServer()
 
