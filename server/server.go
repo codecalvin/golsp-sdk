@@ -3,13 +3,8 @@ package server
 import (
 	"context"
 
-	"github.com/goodgophers/golsp-sdk/internal/transport"
+	"github.com/goodgophers/golsp-sdk/transport"
 	"github.com/sourcegraph/jsonrpc2"
-)
-
-type (
-	LSPMethod         string
-	LSPMethodCallback func(params interface{}) (result interface{}, err error)
 )
 
 type LSPServer struct {
@@ -17,7 +12,7 @@ type LSPServer struct {
 }
 
 func NewLSPServer() LSPServer {
-	return LSPServer{handler: jsonrpc2.HandlerWithError(NewLSPHandler().Handle)}
+	return LSPServer{handler: jsonrpc2.HandlerWithError(newLSPHandler().handle)}
 }
 
 func (s LSPServer) Start(tsprt transport.LSPTransport) error {
@@ -25,7 +20,7 @@ func (s LSPServer) Start(tsprt transport.LSPTransport) error {
 	return tsprt.Listen()
 }
 
-// Handle implements jsonrpc2.Handler
+// handle implements jsonrpc2.Handler
 func (s LSPServer) Handle(ctx context.Context, conn *jsonrpc2.Conn, req *jsonrpc2.Request) {
 	// @TODO filesystem ops need to be performed in order.
 	go s.handler.Handle(ctx, conn, req)

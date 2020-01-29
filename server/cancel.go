@@ -14,9 +14,9 @@ type cancel struct {
 	m  map[jsonrpc2.ID]func()
 }
 
-// WithCancel is like context.WithCancel, except you can also cancel via
-// calling c.Cancel with the same id.
-func (c *cancel) WithCancel(ctx context.Context, id jsonrpc2.ID) (context.Context, func()) {
+// withCancel is like context.withCancel, except you can also cancel via
+// calling c.cancel with the same id.
+func (c *cancel) withCancel(ctx context.Context, id jsonrpc2.ID) (context.Context, func()) {
 	ctx, cancel := context.WithCancel(ctx)
 	c.mu.Lock()
 	if c.m == nil {
@@ -32,9 +32,9 @@ func (c *cancel) WithCancel(ctx context.Context, id jsonrpc2.ID) (context.Contex
 	}
 }
 
-// Cancel will cancel the request with id. If the request has already been
-// cancelled or not been tracked before, Cancel is a noop.
-func (c *cancel) Cancel(id jsonrpc2.ID) {
+// cancel will cancel the request with id. If the request has already been
+// cancelled or not been tracked before, cancel is a noop.
+func (c *cancel) cancel(id jsonrpc2.ID) {
 	var cancel func()
 	c.mu.Lock()
 	if c.m != nil {

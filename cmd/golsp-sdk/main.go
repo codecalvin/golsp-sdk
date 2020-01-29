@@ -4,8 +4,8 @@ import (
 	"flag"
 	"log"
 
-	"github.com/goodgophers/golsp-sdk/internal/server"
-	"github.com/goodgophers/golsp-sdk/internal/transport"
+	"github.com/goodgophers/golsp-sdk/server"
+	"github.com/goodgophers/golsp-sdk/transport"
 )
 
 var (
